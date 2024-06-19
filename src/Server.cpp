@@ -1,10 +1,12 @@
 #include "Server.h"
 
-Server::Server() : PORT(53000){
+namespace fs = std::filesystem;
+
+Server::Server() : PORT(53000), SERVERCAPACITY(100) {
 
 }
 
-int Server::run()
+int Server::run() const
 {
     sf::TcpListener listener;
     std::vector<sf::TcpSocket*> clients;
@@ -22,10 +24,17 @@ int Server::run()
         if (selector.wait()) {
             if (selector.isReady(listener)) {
                 sf::TcpSocket* client = new sf::TcpSocket;
-                if (listener.accept(*client) == sf::Socket::Done) {
-                    clients.push_back(client);
-                    selector.add(*client);
-                    std::cout << "New client connected: " << client->getRemoteAddress() << std::endl;
+                if (clients.size() < SERVERCAPACITY)
+                {
+                    if (listener.accept(*client) == sf::Socket::Done) {
+                        clients.push_back(client);
+                        selector.add(*client);
+
+                        std::cout << "New client connected: " << client->getRemoteAddress() << std::endl;
+                    }
+                    else {
+                        delete client;
+                    }
                 }
                 else {
                     delete client;

@@ -21,9 +21,21 @@
     <ClCompile Include="src\Server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\backend\DataHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\backend\DataHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\entities\Entity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\entities\Player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
