@@ -2,7 +2,7 @@
 #include "backend/DataHandler.h"
 
 int main() {
-	DataHandler DataHandler;
+	DataHandler DataHandler();
 	Server server;
 	server.run();
 	return 0;

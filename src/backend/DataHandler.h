@@ -16,11 +16,12 @@ public:
 
 private:
 
-	sqlite3* db;
+	sqlite3* playerDB;
+	sqlite3* keyDB;
 
 	static DataHandler* sInstance;
 
-	void executeSQLStatement(const char* statement);
+	void executeSQLStatement(const char* statement, sqlite3* database);
 };
 
 #endif // !DATAHANDLER_H

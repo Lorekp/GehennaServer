@@ -10,6 +10,7 @@ DataHandler::DataHandler()
 	sInstance = this;
 
     //create "data" folder
+
     fs::path exec_path = fs::current_path();
 
     // Define the new directory name
@@ -31,18 +32,19 @@ DataHandler::DataHandler()
         std::cerr << "Filesystem error: " << e.what() << std::endl;
     }
 
-    //create database
+    //create player database
+
     int exit = 0;
     fs::path db_path = data_dir / "playerData.db";
 
     // Open a database connection
-    exit = sqlite3_open(db_path.string().c_str(), &db);
+    exit = sqlite3_open(db_path.string().c_str(), &playerDB);
 
     if (exit != SQLITE_OK) {
-        std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+        std::cerr << "Can't open player.db database: " << sqlite3_errmsg(playerDB) << std::endl;
     }
     else {
-        std::cout << "Opened database successfully" << std::endl;
+        std::cout << "Opened player.db database successfully" << std::endl;
     }
 
     // Create an SQL statement
@@ -54,16 +56,39 @@ DataHandler::DataHandler()
         "xp INT NOT NULL"
         ");";
 
-
-    executeSQLStatement(playerSetup);
+    executeSQLStatement(playerSetup, playerDB);
 
     // Close the database connection
-    sqlite3_close(db);
+    sqlite3_close(playerDB);
+
+    //create key database
+
+    db_path = data_dir / "key.db";
+
+    // Open a database connection
+    exit = sqlite3_open(db_path.string().c_str(), &keyDB);
+
+    if (exit != SQLITE_OK) {
+        std::cerr << "Can't open key.db database: " << sqlite3_errmsg(keyDB) << std::endl;
+    }
+    else {
+        std::cout << "Opened key.db database successfully" << std::endl;
+    }
+
+    // Create an SQL statement
+    const char* keySetup = "CREATE TABLE IF NOT EXISTS KEYS("
+        "USED INT,"
+        "HASH TEXT"
+        ");";
+
+    executeSQLStatement(keySetup, keyDB);
+
+    sqlite3_close(keyDB);
 }
 
-void DataHandler::executeSQLStatement(const char* statement) {
+void DataHandler::executeSQLStatement(const char* statement, sqlite3* database) {
     char* errorMessage = nullptr;
-    int exit = sqlite3_exec(db, statement, nullptr, nullptr, &errorMessage);
+    int exit = sqlite3_exec(database, statement, nullptr, nullptr, &errorMessage);
 
     if (exit != SQLITE_OK) {
         if (errorMessage) {
@@ -75,6 +100,6 @@ void DataHandler::executeSQLStatement(const char* statement) {
         }
     }
     else {
-        std::cout << "Executed a statement successfully" << std::endl;
+        std::cout << "Executed an SQL statement successfully" << std::endl;
     }
 }
