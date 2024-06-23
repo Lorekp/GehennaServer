@@ -18,8 +18,8 @@ private:
 	const unsigned short PORT;
 	int const SERVERCAPACITY;
 	std::map<std::string, sf::TcpSocket*> m_clients;
+	std::map<std::string, sf::TcpSocket*> m_servers;
 
-	sqlite3* playerDB;
 	sqlite3* keyDB;
 
 	std::thread* updateThread;
@@ -27,7 +27,7 @@ private:
 
 	std::mutex clientMutex;
 
-	bool validateKey(const std::string& key, sqlite3* db);
+	int validateKey(const std::string& key, sqlite3* db);
 	void authenticateClient(sf::TcpSocket* client, sqlite3* db);
 
 	void update();

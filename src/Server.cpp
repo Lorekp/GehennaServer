@@ -1,7 +1,6 @@
 #include "Server.h"
 #include <iostream>
 #include <thread>
-#include <mutex>
 #include <map>
 #include <string>
 #include <SFML/Network.hpp>
@@ -9,7 +8,7 @@
 
 namespace fs = std::filesystem;
 
-Server::Server() : PORT(53000), SERVERCAPACITY(100) {
+Server::Server() : PORT(30000), SERVERCAPACITY(100) {
     fs::path data_dir = fs::current_path() / "data";
     fs::path db_path = data_dir / "key.db";
 
@@ -41,7 +40,6 @@ int Server::run() {
     selector.add(listener);
     std::cout << "Server is listening to port " << PORT << ", waiting for connections... " << std::endl;
 
-
     while (true) {
         std::cout << "Waiting for events..." << std::endl;
         if (selector.wait()) {
@@ -62,11 +60,14 @@ int Server::run() {
                 }
             }
             else {
+                bool clientEvent = false;
                 for (auto it = m_clients.begin(); it != m_clients.end(); ) {
                     sf::TcpSocket& client = *(it->second);
                     if (selector.isReady(client)) {
+                        clientEvent = true;
                         sf::Packet packet;
                         if (client.receive(packet) == sf::Socket::Done) {
+                            //handle packet from client
                             std::string message;
                             packet >> message;
                             std::cout << "Received message: " << message << std::endl;
@@ -93,6 +94,31 @@ int Server::run() {
                         ++it;
                     }
                 }
+                if (!clientEvent)
+                {
+                    for (auto it = m_servers.begin(); it != m_servers.end(); )
+                    {
+                        sf::TcpSocket& client = *(it->second);
+                        if (selector.isReady(client)) {
+                            clientEvent = true;
+                            sf::Packet packet;
+                            if (client.receive(packet) == sf::Socket::Done) {
+                                //handle packet from gameserver
+                                ++it;
+                            }
+                            else {
+                                std::cout << "GameServer disconnected: " << client.getRemoteAddress() << std::endl;
+                                selector.remove(client);
+                                client.disconnect();
+                                delete it->second;
+                                it = m_servers.erase(it);
+                            }
+                        }
+                        else {
+                            ++it;
+                        }
+                    }
+                }
             }
         }
     }
@@ -101,34 +127,68 @@ int Server::run() {
 }
 
 // Function to validate client key
-bool Server::validateKey(const std::string& key, sqlite3* db) {
+int Server::validateKey(const std::string& key, sqlite3* db) {
     // Check database for key
     sqlite3_stmt* stmt;
-    const char* query = "SELECT COUNT(*) FROM KEYS WHERE HASH = ? AND USED = 0";
+    const char* query = "SELECT COUNT(*) FROM KEYS WHERE HASH = ? AND USED = 0 AND PERMISSIONLEVEL = 1";
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) != SQLITE_OK) {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
-        return false;
+        return 0;
     }
 
     sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_STATIC);
 
     int result = sqlite3_step(stmt);
-    bool isValid = false;
 
+    bool isClient = false;
     if (result == SQLITE_ROW) {
         int count = sqlite3_column_int(stmt, 0);
-        isValid = (count > 0);
+        isClient = (count > 0);
     }
 
     sqlite3_finalize(stmt);
-
-    // Check if key is currently in use
-    if (m_clients.find(key) != m_clients.end()) {
-        isValid = false;
+    
+    if (isClient)
+    {
+        // Check if key is currently in use
+        if (m_clients.find(key) != m_clients.end()) {
+            return 0;
+        }
+        return 1;
     }
 
-    return isValid;
+    // Check database for key
+    sqlite3_stmt* stmt2;
+    query = "SELECT COUNT(*) FROM KEYS WHERE HASH = ? AND USED = 0 AND PERMISSIONLEVEL = 2";
+
+    if (sqlite3_prepare_v2(db, query, -1, &stmt2, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return 0;
+    }
+
+    sqlite3_bind_text(stmt2, 1, key.c_str(), -1, SQLITE_STATIC);
+
+    int result2 = sqlite3_step(stmt2);
+
+    bool isServer = false;
+    if (result2 == SQLITE_ROW) {
+        int count = sqlite3_column_int(stmt2, 0);
+        isServer = (count > 0);
+    }
+
+    sqlite3_finalize(stmt2);
+
+    if (isServer)
+    {
+        // Check if key is currently in use
+        if (m_servers.find(key) != m_servers.end()) {
+            return 0;
+        }
+        return 2;
+    }
+
+    return 0;
 }
 
 void Server::authenticateClient(sf::TcpSocket* client, sqlite3* db) {
@@ -142,10 +202,9 @@ void Server::authenticateClient(sf::TcpSocket* client, sqlite3* db) {
     std::string key;
     packet >> key;
 
-    if (validateKey(key, db)) {
+    if (validateKey(key, db) == 1) {
         std::cout << "Client authenticated with key: " << key << std::endl;
         {
-            std::lock_guard<std::mutex> lock(clientMutex);
             m_clients.emplace(key, client);
             selector.add(*m_clients.find(key)->second);
         }
@@ -155,7 +214,21 @@ void Server::authenticateClient(sf::TcpSocket* client, sqlite3* db) {
         client->send(responsePacket);
 
         std::cout << "New client connected: " << client->getRemoteAddress() << std::endl;
-        
+    }
+    else if (validateKey(key, db) == 2)
+    {
+        std::cout << "GameServer authenticated with key: " << key << std::endl;
+        {
+            m_servers.emplace(key, client);
+            selector.add(*m_servers.find(key)->second);
+        }
+
+        sf::Packet responsePacket;
+        responsePacket << "authenticated";
+        client->send(responsePacket);
+
+        std::cout << "New GameServer connected: " << client->getRemoteAddress() << std::endl;
+
     }
     else {
         sf::Packet responsePacket;
@@ -173,10 +246,17 @@ void Server::update() {
         std::getline(std::cin, message);
 
         if (message == "1") {
-            int i = 1;
-            for (auto it = m_clients.begin(); it != m_clients.end(); ++it) {
-                std::cout << "Client " << i << ": " << it->second->getRemoteAddress() << std::endl;
-                ++i;
+            if (m_clients.size() != 0)
+            {
+                int i = 1;
+                for (auto it = m_clients.begin(); it != m_clients.end(); ++it) {
+                    std::cout << "Client " << i << ": " << it->second->getRemoteAddress() << std::endl;
+                    ++i;
+                }
+            }
+            else
+            {
+                std::cout << "No clients connected." << std::endl;
             }
         }
         else if (message == "test")

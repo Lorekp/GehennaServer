@@ -1,7 +1,6 @@
 #ifndef DATAHANDLER_H
 #define DATAHANDLER_H
 
-#include "../entities/Player.h"
 #include <map>
 #include <string>
 #include <assert.h>

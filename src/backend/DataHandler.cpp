@@ -32,10 +32,11 @@ DataHandler::DataHandler()
         std::cerr << "Filesystem error: " << e.what() << std::endl;
     }
 
+    /*
     //create player database
 
     int exit = 0;
-    fs::path db_path = data_dir / "playerData.db";
+   
 
     // Open a database connection
     exit = sqlite3_open(db_path.string().c_str(), &playerDB);
@@ -59,12 +60,15 @@ DataHandler::DataHandler()
     executeSQLStatement(playerSetup, playerDB);
 
     // Close the database connection
-    sqlite3_close(playerDB);
+    sqlite3_close(playerDB);*/
 
     //create key database
 
+    fs::path db_path = data_dir / "playerData.db";
+
     db_path = data_dir / "key.db";
 
+    int exit = 0;
     // Open a database connection
     exit = sqlite3_open(db_path.string().c_str(), &keyDB);
 

@@ -137,14 +137,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\backend\PacketHandler.cpp" />
     <ClCompile Include="src\backend\DataHandler.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\backend\PacketHandler.h" />
     <ClInclude Include="src\backend\DataHandler.h" />
-    <ClInclude Include="src\entities\Entity.h" />
-    <ClInclude Include="src\entities\Player.h" />
     <ClInclude Include="src\Server.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

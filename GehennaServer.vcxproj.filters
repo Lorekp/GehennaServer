@@ -24,6 +24,9 @@
     <ClCompile Include="src\backend\DataHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\backend\PacketHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Server.h">
@@ -32,10 +35,7 @@
     <ClInclude Include="src\backend\DataHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entities\Entity.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\entities\Player.h">
+    <ClInclude Include="src\backend\PacketHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
