@@ -1,0 +1,3 @@
+# Authentication databases and SQLite sidecars are local runtime state.
+/data/key.db
+/data/key.db-*

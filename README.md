@@ -53,7 +53,7 @@ Multi-configuration generators can place the executable in a configuration subdi
 
 Authentication requires a `KEYS` table with `HASH`, `USED`, and `PERMISSIONLEVEL` columns. Eligible rows have `USED = 0`; permission levels 1 and 2 identify clients and game servers respectively. A compatible client must use SFML packet serialization, sending a string key first and string messages afterward. No client or automated smoke test is included here.
 
-Database provisioning is incomplete: `main` declares functions named `DataHandler` and `PacketHandler` instead of constructing their objects, so the initializer does not execute. Its table definition also omits `PERMISSIONLEVEL`. A fresh authentication database therefore requires corrected initialization or separate provisioning with synthetic development keys.
+Database provisioning is incomplete: `main` declares functions named `DataHandler` and `PacketHandler` instead of constructing their objects, so the initializer does not execute. Its table definition also omits `PERMISSIONLEVEL`. The empty schema in `data/key-schema.sql` includes all three required columns. Before starting the server, create `data/key.db` from this schema and provision fresh synthetic development keys locally. Authentication databases are ignored and no usable keys are bundled. Do not reuse credentials from older copies of this prototype.
 
 ## Current limitations
 
